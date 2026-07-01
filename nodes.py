@@ -11,6 +11,8 @@ from console import print as rprint
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain.schema import HumanMessage
+# Import Tavily components for real web search
+from langchain_tavily import TavilySearch, TavilyExtract, TavilyMap
 
 # Simple embedding helper (hash to vector)
 def embed_text(text: str, dim: int = 128) -> List[float]:
@@ -78,9 +80,18 @@ def research_entity(state: CompareState) -> CompareState:
             rprint("[yellow]Skipping Tavily search, similar note found in Qdrant.")
             snippet = f"Previously noted information for {entity} on {criterion}."
         else:
-            # Perform dummy Tavily search
-            snippet = f"Tavily result: {entity} excels at {criterion}."
-            rprint("[cyan]Tavily searched for", entity, "and criterion", criterion)
+            # Perform real Tavily search
+            tavily_search = TavilySearch()
+            tavily_extract = TavilyExtract()
+            tavily_map = TavilyMap()
+
+            query = f"{entity} {criterion}"
+            rprint("[cyan]Performing Tavily search for:", query)
+            search_results = tavily_search.run(query=query)
+
+            extracted_text = tavily_extract.run(search_results=search_results)
+            snippet = tavily_map.run(extracted_text=extracted_text)
+
             # Store the new note vector
             qdrant_client.upsert_vector(
                 collection_name,
@@ -89,9 +100,17 @@ def research_entity(state: CompareState) -> CompareState:
                 metadata={"snippet": snippet}
             )
     else:
-        # Without Qdrant: perform dummy Tavily search
-        snippet = f"Tavily result: {entity} excels at {criterion}."
-        rprint("[cyan]Tavily searched for", entity, "and criterion", criterion)
+        # Without Qdrant: perform real Tavily search
+        tavily_search = TavilySearch()
+        tavily_extract = TavilyExtract()
+        tavily_map = TavilyMap()
+
+        query = f"{entity} {criterion}"
+        rprint("[cyan]Performing Tavily search for:", query)
+        search_results = tavily_search.run(query=query)
+
+        extracted_text = tavily_extract.run(search_results=search_results)
+        snippet = tavily_map.run(extracted_text=extracted_text)
 
     state["findings"][pair_key] = snippet
 
