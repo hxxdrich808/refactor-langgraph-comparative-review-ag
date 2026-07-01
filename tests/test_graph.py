@@ -4,7 +4,7 @@ from graph_builder import create_comparative_graph
 
 @pytest.fixture(scope="module")
 def graph():
-    return create_comparative_graph()
+    return create_comparative_graph(llm_type="openai")
 
 def test_full_run(graph):
     # Basic entities list

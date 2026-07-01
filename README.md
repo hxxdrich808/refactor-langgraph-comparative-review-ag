@@ -6,7 +6,7 @@ This project demonstrates a LangGraph-based comparative review agent that evalua
 
 - Uses **LangGraph's GraphBuilder** pattern for a single, unified approach.
 - Performs real-time web searches with [Tavily](https://tavily.com/).
-- Generates concise recommendations using OpenAI’s GPT models.
+- Generates concise recommendations using OpenAI or Ollama via LangChain.
 - CLI demo accepts custom entities or defaults to `Chroma`, `FAISS`, and `Qdrant`.
 
 ## Setup
@@ -32,7 +32,7 @@ This project demonstrates a LangGraph-based comparative review agent that evalua
 
    ```bash
    export TAVILY_API_KEY=your_tavily_api_key
-   export OPENAI_API_KEY=your_openai_api_key
+   export OPENAI_API_KEY=your_openai_api_key  # required if using OpenAI LLM
    ```
 
 ## Running the Demo
@@ -42,6 +42,12 @@ python main.py --entities Chroma FAISS Qdrant
 ```
 
 If you omit `--entities`, the demo will use the default list.
+
+You can also switch to a local Ollama model:
+
+```bash
+python main.py --llm-type ollama
+```
 
 The script prints a markdown table summarizing findings and a short verdict recommendation.
 

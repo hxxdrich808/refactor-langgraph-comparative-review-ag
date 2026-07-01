@@ -84,15 +84,22 @@ def build_table(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def verdict(state: Dict[str, Any]) -> Dict[str, Any]:
+def verdict(state: Dict[str, Any], llm_type: str = "openai") -> Dict[str, Any]:
     """
     Generate a concise recommendation using an LLM based on the final table.
+    Supports OpenAI or Ollama via LangChain.
     """
-    import openai
+    from langchain_openai import ChatOpenAI
+    from langchain_ollama import ChatOllama
 
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    if not openai.api_key:
-        raise RuntimeError("Please set OPENAI_API_KEY environment variable.")
+    if llm_type == "ollama":
+        # Use local Ollama model; default to llama3.1
+        llm = ChatOllama(model="llama3.1", temperature=0.2, max_tokens=150)
+    else:
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            raise RuntimeError("Please set OPENAI_API_KEY environment variable.")
+        llm = ChatOpenAI(openai_api_key=openai_api_key, temperature=0.2, max_tokens=150)
 
     prompt = (
         "You are an AI assistant that reviews comparative tables of database technologies.\n"
@@ -101,11 +108,6 @@ def verdict(state: Dict[str, Any]) -> Dict[str, Any]:
         "looking to build a scalable web application. Keep it under 100 words."
     )
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
-        max_tokens=150,
-    )
-    state["verdict"] = response["choices"][0]["message"]["content"].strip()
+    response = llm.invoke(prompt)
+    state["verdict"] = str(response).strip()
     return state

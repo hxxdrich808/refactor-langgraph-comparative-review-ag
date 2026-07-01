@@ -3,3 +3,6 @@ tavily-client==0.2.0
 openai==1.3.5
 python-dotenv==1.0.0
 pydantic==2.6.4
+langchain-openai==0.1.0
+langchain-ollama==0.1.0
+qdrant-client==1.10.0

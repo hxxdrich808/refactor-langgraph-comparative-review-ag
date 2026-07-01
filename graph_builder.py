@@ -2,10 +2,11 @@ from langgraph.graph import StateGraph, END, START
 from compare_state import CompareState
 from nodes import plan_criteria, research_entity, build_table, verdict
 
-def create_comparative_graph() -> StateGraph:
+def create_comparative_graph(llm_type: str = "openai") -> StateGraph:
     """
     Build the entire comparative review graph using GraphBuilder.
     The graph follows: START → plan_criteria → research_entity (loop) → build_table → verdict → END
+    llm_type determines which LangChain LLM provider is used in the verdict node.
     """
     # Define state type for type checking
     def _state(state: dict):
@@ -17,7 +18,7 @@ def create_comparative_graph() -> StateGraph:
     builder.add_node("plan", plan_criteria)
     builder.add_node("research", research_entity)
     builder.add_node("table", build_table)
-    builder.add_node("verdict", verdict)
+    builder.add_node("verdict", lambda state, llm_type=llm_type: verdict(state, llm_type))
 
     # Define connections
     builder.set_entry_point("plan")
