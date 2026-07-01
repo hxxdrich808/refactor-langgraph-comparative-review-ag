@@ -1,6 +1,6 @@
-langgraph
-rich
-qdrant-client
-tavily-python
-openai
-ollama
+langgraph>=0.1.0
+langchain-openai>=0.2.0
+langchain-ollama>=0.2.0
+rich>=13.0.0
+qdrant-client>=1.0.0
+pydantic>=2.0.0

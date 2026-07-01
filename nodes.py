@@ -8,6 +8,9 @@ from typing import Dict, Any, Tuple, List
 from compare_state import CompareState
 from qdrant_client import QdrantClientWrapper
 from console import print as rprint
+from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
+from langchain.schema import HumanMessage
 
 # Simple embedding helper (hash to vector)
 def embed_text(text: str, dim: int = 128) -> List[float]:
@@ -17,16 +20,26 @@ def embed_text(text: str, dim: int = 128) -> List[float]:
 # Global Qdrant client instance
 qdrant_client = QdrantClientWrapper()
 
+def get_llm(llm_type: str):
+    if llm_type == "openai":
+        return ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    else:
+        return ChatOllama(model="llama2")
+
 def plan_criteria(state: CompareState) -> CompareState:
     """
-    Dummy implementation that generates three criteria.
-    In a real scenario, this would call an LLM to produce criteria.
+    Generate criteria using an LLM.
     """
-    state["criteria"] = [
-        "Performance",
-        "Ease of Use",
-        "Community Support"
-    ]
+    llm = get_llm(state.get("llm_type", "openai"))
+    prompt = (
+        "Generate three distinct evaluation criteria for comparing "
+        f"{', '.join(state['entities'])}. Return them as a numbered list."
+    )
+    response = llm([HumanMessage(content=prompt)])
+    text = response.content.strip()
+    # Parse numbered list
+    criteria = [line.split(".", 1)[-1].strip() for line in text.splitlines() if line]
+    state["criteria"] = criteria
     rprint("[green]Criteria planned:[/]", ", ".join(state["criteria"]))
     return state
 
@@ -55,7 +68,6 @@ def research_entity(state: CompareState) -> CompareState:
         qdrant_client.ensure_collection(collection_name, vector_size=128)
         vector_id = f"{entity}_{criterion}"
         vector = embed_text(f"{entity} {criterion}")
-        metadata = {"entity": entity, "criterion": criterion}
         # Check for existing similar notes
         results = qdrant_client.search_similar(
             collection_name,
@@ -64,7 +76,6 @@ def research_entity(state: CompareState) -> CompareState:
         )
         if results and results[0]["score"] > 0.9:
             rprint("[yellow]Skipping Tavily search, similar note found in Qdrant.")
-            # Retrieve stored snippet from metadata (placeholder)
             snippet = f"Previously noted information for {entity} on {criterion}."
         else:
             # Perform dummy Tavily search
@@ -113,12 +124,14 @@ def build_table(state: CompareState) -> CompareState:
 
 def verdict(state: CompareState, llm_type: str) -> CompareState:
     """
-    Dummy verdict generation.
+    Generate a recommendation using an LLM.
     """
-    # In a real implementation this would call an LLM.
-    state["verdict"] = (
-        "Based on the comparison, FAISS offers the best balance between "
-        "performance and ease of use for most scenarios."
+    llm = get_llm(llm_type)
+    prompt = (
+        f"Based on the following comparison table:\n\n{state['final_table']}\n"
+        "Provide a concise 2–4 sentence recommendation."
     )
+    response = llm([HumanMessage(content=prompt)])
+    state["verdict"] = response.content.strip()
     rprint("[magenta]Verdict generated.")
     return state

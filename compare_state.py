@@ -2,7 +2,7 @@
 State definition used by the LangGraph agent.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, Tuple, List, Optional
 
 # The state is a simple dictionary that holds all data needed during the run.
 CompareState = Dict[str, Any]
