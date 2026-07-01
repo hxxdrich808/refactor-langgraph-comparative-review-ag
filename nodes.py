@@ -1,9 +1,11 @@
 import os
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, List
 
 from tavily import TavilyClient
 from compare_state import CompareState
 from console import console
+from qdrant_client import qdrant_service
+
 
 # Initialize Tavily client once
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
@@ -32,6 +34,7 @@ def research_entity(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Perform a web search for the current entity‑criterion pair using Tavily
     and store a concise note in findings.
+    Additionally, generate an embedding for the note and persist it via Qdrant.
     """
     entities = state["entities"]
     criteria = state["criteria"]
@@ -52,6 +55,12 @@ def research_entity(state: Dict[str, Any]) -> Dict[str, Any]:
         note = f"Error fetching data: {e}"
 
     state["findings"][(entity, criterion)] = note
+
+    # Persist embedding via Qdrant
+    vector_ids = qdrant_service.upsert_embeddings(entity, criterion, note)
+    if "vector_ids" not in state:
+        state["vector_ids"] = {}
+    state["vector_ids"][entity] = state["vector_ids"].get(entity, []) + vector_ids
 
     console.print(f"[green]Fetched:[/] {entity} - {criterion}")
 
@@ -91,10 +100,23 @@ def verdict(state: Dict[str, Any], llm_type: str = "openai") -> Dict[str, Any]:
     """
     Generate a concise recommendation using an LLM based on the final table.
     Supports OpenAI or Ollama via LangChain.
+    Before generating the verdict, query Qdrant for similarity scores
+    across entities to inform the decision.
     """
     from langchain_openai import ChatOpenAI
     from langchain_ollama import ChatOllama
 
+    # --- Similarity Query Section ---
+    # For demonstration, we perform a simple similarity search using the table title as query.
+    # In a real scenario, you would craft a more meaningful query based on the criteria.
+    similarity_results = qdrant_service.search_similar(
+        query_text="comparison of database technologies", top_k=5
+    )
+    console.print("[bold yellow]Similarity Search Results:[/]")
+    for res in similarity_results:
+        console.print(f"  {res['id']} (score: {res['score']:.4f})")
+
+    # --- LLM Verdict Section ---
     if llm_type == "ollama":
         # Use local Ollama model; default to llama3.1
         llm = ChatOllama(model="llama3.1", temperature=0.2, max_tokens=150)
@@ -107,8 +129,9 @@ def verdict(state: Dict[str, Any], llm_type: str = "openai") -> Dict[str, Any]:
     prompt = (
         "You are an AI assistant that reviews comparative tables of database technologies.\n"
         f"Here is the table:\n{state['table_markdown']}\n\n"
-        "Based on this table, recommend which technology is best suited for a small startup "
-        "looking to build a scalable web application. Keep it under 100 words."
+        "Based on this table and the similarity insights above, recommend which technology "
+        "is best suited for a small startup looking to build a scalable web application. "
+        "Keep it under 100 words."
     )
 
     response = llm.invoke(prompt)
