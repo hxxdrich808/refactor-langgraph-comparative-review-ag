@@ -30,9 +30,15 @@ def parse_args() -> argparse.Namespace:
         default=os.getenv("LLM_TYPE", "openai"),
         help="LLM provider",
     )
+    parser.add_argument(
+        "--enable-qdrant",
+        action="store_true",
+        default=False,
+        help="Enable Qdrant integration for vector storage and retrieval",
+    )
     return parser.parse_args()
 
-def build_state(entities: List[str]) -> CompareState:
+def build_state(entities: List[str], enable_qdrant: bool) -> CompareState:
     state: CompareState = {
         "entities": entities,
         "criteria": [],
@@ -40,6 +46,7 @@ def build_state(entities: List[str]) -> CompareState:
         "final_table": None,
         "verdict": None,
         "current_pair_index": 0,
+        "qdrant_vectors": {} if enable_qdrant else None,
     }
     return state
 
@@ -69,8 +76,12 @@ def render_output(state: CompareState):
 
 def main():
     args = parse_args()
-    state = build_state(args.entities)
+    state = build_state(args.entities, enable_qdrant=args.enable_qdrant)
     rprint("[bold cyan]Starting comparative review...[/]")
+    if args.enable_qdrant:
+        rprint("[green]Qdrant integration enabled.[/]")
+    else:
+        rprint("[yellow]Qdrant integration disabled.[/]")
     state = run_graph(state, llm_type=args.llm_type)
     render_output(state)
 

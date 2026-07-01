@@ -4,3 +4,4 @@ langchain-ollama
 tavily-python
 python-dotenv
 rich
+qdrant-client
