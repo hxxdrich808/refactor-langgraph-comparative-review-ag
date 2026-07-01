@@ -47,6 +47,7 @@ def build_state(entities: List[str], enable_qdrant: bool) -> CompareState:
         "verdict": None,
         "current_pair_index": 0,
         "qdrant_vectors": {} if enable_qdrant else None,
+        "use_qdrant": enable_qdrant,
     }
     return state
 

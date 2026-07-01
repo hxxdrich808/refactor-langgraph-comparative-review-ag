@@ -15,3 +15,4 @@ CompareState = Dict[str, Any]
 # - verdict: Optional[str]
 # - current_pair_index: int
 # - qdrant_vectors: Optional[Dict[str, List[float]]]  # vector representations per entity
+# - use_qdrant: bool  # flag to toggle Qdrant integration

@@ -54,7 +54,7 @@ class QdrantClientWrapper:
         Upsert a single vector with optional metadata.
         """
         point = PointStruct(id=vector_id, vector=vector, payload=metadata or {})
-        self.client.upsert(collection_name, points=[point])
+        self.client.upsert(collection_name=collection_name, points=[point])
 
     def search_similar(
         self,

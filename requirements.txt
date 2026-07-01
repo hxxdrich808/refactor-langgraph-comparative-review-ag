@@ -1,7 +1,6 @@
 langgraph
-langchain-openai
-langchain-ollama
-tavily-python
-python-dotenv
 rich
 qdrant-client
+tavily-python
+openai
+ollama
