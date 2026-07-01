@@ -3,7 +3,7 @@ from typing import Any, Dict, Tuple, List
 
 from tavily import TavilyClient
 from compare_state import CompareState
-from console import console
+from console import print as rprint
 from qdrant_client import qdrant_service
 
 
@@ -14,7 +14,7 @@ if not TAVILY_API_KEY:
 tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
 
 
-def plan_criteria(state: Dict[str, Any]) -> Dict[str, Any]:
+def plan_criteria(state: CompareState) -> CompareState:
     """
     Populate the list of criteria to evaluate each entity against.
     The criteria are hard‑coded for this demo but could be made dynamic.
@@ -26,15 +26,14 @@ def plan_criteria(state: Dict[str, Any]) -> Dict[str, Any]:
         "Cost",
         "Scalability",
     ]
-    console.print("[bold cyan]Criteria Plan:[/]", state["criteria"])
+    rprint("[bold cyan]Criteria Plan:[/]", state["criteria"])
     return state
 
 
-def research_entity(state: Dict[str, Any]) -> Dict[str, Any]:
+def research_entity(state: CompareState) -> CompareState:
     """
     Perform a web search for the current entity‑criterion pair using Tavily
     and store a concise note in findings.
-    Additionally, generate an embedding for the note and persist it via Qdrant.
     """
     entities = state["entities"]
     criteria = state["criteria"]
@@ -56,20 +55,14 @@ def research_entity(state: Dict[str, Any]) -> Dict[str, Any]:
 
     state["findings"][(entity, criterion)] = note
 
-    # Persist embedding via Qdrant
-    vector_ids = qdrant_service.upsert_embeddings(entity, criterion, note)
-    if "vector_ids" not in state:
-        state["vector_ids"] = {}
-    state["vector_ids"][entity] = state["vector_ids"].get(entity, []) + vector_ids
-
-    console.print(f"[green]Fetched:[/] {entity} - {criterion}")
+    rprint(f"[green]Fetched:[/] {entity} - {criterion}")
 
     # Advance to next pair
     state["current_pair_index"] = idx + 1
     return state
 
 
-def build_table(state: Dict[str, Any]) -> Dict[str, Any]:
+def build_table(state: CompareState) -> CompareState:
     """
     Build a markdown table from the collected findings.
     Rows are criteria, columns are entities.
@@ -92,29 +85,17 @@ def build_table(state: Dict[str, Any]) -> Dict[str, Any]:
         rows.append("| " + " | ".join(row_cells) + " |\n")
 
     table = header + separator + "".join(rows)
-    state["table_markdown"] = table
+    state["final_table"] = table
     return state
 
 
-def verdict(state: Dict[str, Any], llm_type: str = "openai") -> Dict[str, Any]:
+def verdict(state: CompareState, llm_type: str = "openai") -> CompareState:
     """
     Generate a concise recommendation using an LLM based on the final table.
     Supports OpenAI or Ollama via LangChain.
-    Before generating the verdict, query Qdrant for similarity scores
-    across entities to inform the decision.
     """
     from langchain_openai import ChatOpenAI
     from langchain_ollama import ChatOllama
-
-    # --- Similarity Query Section ---
-    # For demonstration, we perform a simple similarity search using the table title as query.
-    # In a real scenario, you would craft a more meaningful query based on the criteria.
-    similarity_results = qdrant_service.search_similar(
-        query_text="comparison of database technologies", top_k=5
-    )
-    console.print("[bold yellow]Similarity Search Results:[/]")
-    for res in similarity_results:
-        console.print(f"  {res['id']} (score: {res['score']:.4f})")
 
     # --- LLM Verdict Section ---
     if llm_type == "ollama":
@@ -128,13 +109,13 @@ def verdict(state: Dict[str, Any], llm_type: str = "openai") -> Dict[str, Any]:
 
     prompt = (
         "You are an AI assistant that reviews comparative tables of database technologies.\n"
-        f"Here is the table:\n{state['table_markdown']}\n\n"
-        "Based on this table and the similarity insights above, recommend which technology "
+        f"Here is the table:\n{state['final_table']}\n\n"
+        "Based on this table, recommend which technology "
         "is best suited for a small startup looking to build a scalable web application. "
         "Keep it under 100 words."
     )
 
     response = llm.invoke(prompt)
     state["verdict"] = str(response).strip()
-    console.print("[bold magenta]Verdict Generated:[/]", state["verdict"])
+    rprint("[bold magenta]Verdict Generated:[/]", state["verdict"])
     return state
