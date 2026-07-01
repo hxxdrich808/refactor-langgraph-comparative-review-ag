@@ -5,12 +5,14 @@ from nodes import plan_criteria, research_entity, build_table, verdict
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def create_graph(llm_type: str = "openai") -> GraphBuilder:
     builder = GraphBuilder()
 
-    # Initial state with entities provided by user
     def init_state(entities):
         return {
             "entities": entities,
@@ -27,14 +29,14 @@ def create_graph(llm_type: str = "openai") -> GraphBuilder:
     builder.add_node("build_table", build_table)
     builder.add_node("verdict", lambda s: verdict(s, llm_type=llm_type))
 
-    # Flow
     builder.set_entry_point("init")
     builder.add_edge("init", "plan_criteria")
     builder.add_edge("plan_criteria", "research_entity")
     builder.add_conditional_edges(
         "research_entity",
         lambda state: (
-            ("continue" if state.get("current_pair_index", 0) < len(state["entities"]) * len(state["criteria"])
+            ("continue" if state.get("current_pair_index", 0)
+             < len(state["entities"]) * len(state["criteria"])
              else "build_table")
         ),
     )
@@ -64,7 +66,6 @@ def main():
     graph = builder.compile()
     initial_state: CompareState = init_state_fn(args.entities)
 
-    # Run the graph
     final_state = graph.run(initial_state)
 
     console = Console()
