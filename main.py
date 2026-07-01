@@ -1,6 +1,7 @@
 import argparse
 from graph_builder import create_comparative_graph
 from compare_state import CompareState
+from console import console
 
 def run_demo(entities, llm_type):
     # Initialize state with entities and empty fields
@@ -16,10 +17,10 @@ def run_demo(entities, llm_type):
     graph = create_comparative_graph(llm_type=llm_type)
     final_state = graph.invoke(initial_state)
 
-    print("\n=== Markdown Table ===\n")
-    print(final_state["table_markdown"])
-    print("\n=== Verdict ===\n")
-    print(final_state["verdict"])
+    console.print("\n[bold underline]Markdown Table:[/]\n")
+    console.print(final_state["table_markdown"])
+    console.print("\n[bold underline]Verdict:[/]\n")
+    console.print(final_state["verdict"])
 
 
 def main():

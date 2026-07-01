@@ -2,8 +2,8 @@ import os
 from typing import Any, Dict, Tuple
 
 from tavily import TavilyClient
-from langgraph.graph import StateGraph
 from compare_state import CompareState
+from console import console
 
 # Initialize Tavily client once
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
@@ -24,6 +24,7 @@ def plan_criteria(state: Dict[str, Any]) -> Dict[str, Any]:
         "Cost",
         "Scalability",
     ]
+    console.print("[bold cyan]Criteria Plan:[/]", state["criteria"])
     return state
 
 
@@ -51,6 +52,8 @@ def research_entity(state: Dict[str, Any]) -> Dict[str, Any]:
         note = f"Error fetching data: {e}"
 
     state["findings"][(entity, criterion)] = note
+
+    console.print(f"[green]Fetched:[/] {entity} - {criterion}")
 
     # Advance to next pair
     state["current_pair_index"] = idx + 1
@@ -110,4 +113,5 @@ def verdict(state: Dict[str, Any], llm_type: str = "openai") -> Dict[str, Any]:
 
     response = llm.invoke(prompt)
     state["verdict"] = str(response).strip()
+    console.print("[bold magenta]Verdict Generated:[/]", state["verdict"])
     return state
