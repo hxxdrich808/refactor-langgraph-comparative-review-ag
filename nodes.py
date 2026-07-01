@@ -7,7 +7,6 @@ from typing import Dict, Any, Tuple, List
 
 from compare_state import CompareState
 from qdrant_client import QdrantClientWrapper
-from console import print as rprint
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain.schema import HumanMessage
@@ -42,7 +41,6 @@ def plan_criteria(state: CompareState) -> CompareState:
     # Parse numbered list
     criteria = [line.split(".", 1)[-1].strip() for line in text.splitlines() if line]
     state["criteria"] = criteria
-    rprint("[green]Criteria planned:[/]", ", ".join(state["criteria"]))
     return state
 
 def research_entity(state: CompareState) -> CompareState:
@@ -77,7 +75,6 @@ def research_entity(state: CompareState) -> CompareState:
             limit=1
         )
         if results and results[0]["score"] > 0.9:
-            rprint("[yellow]Skipping Tavily search, similar note found in Qdrant.")
             snippet = f"Previously noted information for {entity} on {criterion}."
         else:
             # Perform real Tavily search
@@ -86,7 +83,6 @@ def research_entity(state: CompareState) -> CompareState:
             tavily_map = TavilyMap()
 
             query = f"{entity} {criterion}"
-            rprint("[cyan]Performing Tavily search for:", query)
             search_results = tavily_search.run(query=query)
 
             extracted_text = tavily_extract.run(search_results=search_results)
@@ -106,7 +102,6 @@ def research_entity(state: CompareState) -> CompareState:
         tavily_map = TavilyMap()
 
         query = f"{entity} {criterion}"
-        rprint("[cyan]Performing Tavily search for:", query)
         search_results = tavily_search.run(query=query)
 
         extracted_text = tavily_extract.run(search_results=search_results)
@@ -138,7 +133,6 @@ def build_table(state: CompareState) -> CompareState:
 
     table_md = header + separator + "".join(rows)
     state["final_table"] = table_md
-    rprint("[green]Table built.")
     return state
 
 def verdict(state: CompareState, llm_type: str) -> CompareState:
@@ -152,5 +146,4 @@ def verdict(state: CompareState, llm_type: str) -> CompareState:
     )
     response = llm([HumanMessage(content=prompt)])
     state["verdict"] = response.content.strip()
-    rprint("[magenta]Verdict generated.")
     return state

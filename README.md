@@ -47,7 +47,7 @@ python main.py --enable-qdrant
 
 ## Output
 
-The agent prints a markdown table and a concise recommendation to the console.
+The agent prints a markdown table and a concise recommendation to the console using **rich**.
 
 ---
 
