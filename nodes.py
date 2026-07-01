@@ -14,6 +14,13 @@ from langchain.schema import HumanMessage
 # Import Tavily components for real web search
 from langchain_tavily import TavilySearch, TavilyExtract, TavilyMap
 
+# Rich imports for pretty printing
+from rich.console import Console
+from rich.table import Table
+from rich.markdown import Markdown
+
+console = Console()
+
 # Simple embedding helper (hash to vector)
 def embed_text(text: str, dim: int = 128) -> List[float]:
     h = hashlib.sha256(text.encode()).digest()
@@ -42,6 +49,14 @@ def plan_criteria(state: CompareState) -> CompareState:
     # Parse numbered list
     criteria = [line.split(".", 1)[-1].strip() for line in text.splitlines() if line]
     state["criteria"] = criteria
+
+    # Rich output of plan
+    console.print("[bold underline]Plan: Generate Criteria[/]\n")
+    table = Table(show_header=False, box=None)
+    for idx, crit in enumerate(criteria, 1):
+        table.add_row(f"[cyan]{idx}.[/]", f"{crit}")
+    console.print(table)
+
     return state
 
 def research_entity(state: CompareState) -> CompareState:
@@ -62,6 +77,9 @@ def research_entity(state: CompareState) -> CompareState:
     criterion = criteria[crit_idx]
 
     pair_key: Tuple[str, str] = (entity, criterion)
+
+    # Rich output of current iteration
+    console.print(f"[bold]{entity}[/] – [italic]{criterion}[/]")
 
     # Qdrant logic
     if state.get("use_qdrant"):
@@ -110,6 +128,9 @@ def research_entity(state: CompareState) -> CompareState:
 
     state["findings"][pair_key] = snippet
 
+    # Rich output of snippet
+    console.print(f"[green]Note:[/] {snippet}\n")
+
     # Advance index
     state["current_pair_index"] = idx + 1
     return state
@@ -134,6 +155,11 @@ def build_table(state: CompareState) -> CompareState:
 
     table_md = header + separator + "".join(rows)
     state["final_table"] = table_md
+
+    # Rich output of final markdown table
+    console.print("[bold underline]Final Comparison Table[/]\n")
+    console.print(Markdown(table_md))
+
     return state
 
 def verdict(state: CompareState, llm_type: str) -> CompareState:
@@ -147,4 +173,9 @@ def verdict(state: CompareState, llm_type: str) -> CompareState:
     )
     response = llm([HumanMessage(content=prompt)])
     state["verdict"] = response.content.strip()
+
+    # Rich output of verdict
+    console.print("[bold green]Verdict:[/]")
+    console.print(f"[green]{state['verdict']}[/]\n")
+
     return state
