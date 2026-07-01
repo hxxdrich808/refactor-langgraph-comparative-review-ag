@@ -6,7 +6,8 @@ import hashlib
 from typing import Dict, Any, Tuple, List
 
 from compare_state import CompareState
-from qdrant_client import QdrantClientWrapper
+# Import the new wrapper instead of the old qdrant_client module
+from src.qdrant_wrapper import QdrantClientWrapper
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain.schema import HumanMessage
