@@ -7,3 +7,4 @@ class CompareState(TypedDict):
     final_table: Optional[str]
     verdict: Optional[str]
     current_pair_index: int
+    # Qdrant client is not stored in state; accessed via qdrant_client module

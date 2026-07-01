@@ -7,7 +7,9 @@ from tavily import TavilyClient
 from compare_state import CompareState
 from console import print as rprint
 from dotenv import load_dotenv
+import json
 
+# Load environment variables
 load_dotenv()
 
 # Initialize Tavily client once
@@ -16,6 +18,8 @@ if not TAVILY_API_KEY:
     raise RuntimeError("Please set the environment variable TAVILY_API_KEY.")
 tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
 
+# Import Qdrant helper
+from qdrant_client import add_document, query_similar
 
 def plan_criteria(state: CompareState) -> CompareState:
     """
@@ -40,8 +44,6 @@ def plan_criteria(state: CompareState) -> CompareState:
 
     response = llm.invoke(prompt)
     # Parse JSON array
-    import json
-
     try:
         criteria = json.loads(str(response))
         if not isinstance(criteria, list):
@@ -59,6 +61,7 @@ def research_entity(state: CompareState) -> CompareState:
     """
     Perform a Tavily web search for the current entity‑criterion pair.
     Store the snippet in findings[entity][criterion_index].
+    Also store the snippet in Qdrant for future similarity checks.
     """
     entities = state["entities"]
     criteria = state["criteria"]
@@ -77,6 +80,10 @@ def research_entity(state: CompareState) -> CompareState:
         snippet = result["results"][0]["content"][:300]
     except Exception as e:
         snippet = f"Error fetching data: {e}"
+
+    # Store in Qdrant
+    doc_id = f"{entity}_{criterion}"
+    add_document(snippet, doc_id)
 
     # Ensure list exists
     if entity not in state["findings"]:
@@ -122,9 +129,6 @@ def verdict(state: CompareState, llm_type: str = "openai") -> CompareState:
     """
     Generate a concise recommendation using an LLM based on the final table.
     """
-    from langchain_openai import ChatOpenAI
-    from langchain_ollama import ChatOllama
-
     if llm_type == "ollama":
         llm = ChatOllama(model="llama3.1", temperature=0.2, max_tokens=150)
     else:

@@ -26,6 +26,15 @@ pip install -r requirements.txt
 cp .env.example .env   # edit with your keys
 ```
 
+## Environment Variables
+
+- `TAVILY_API_KEY` – API key for Tavily web search.
+- `OPENAI_API_KEY` – OpenAI API key (if using the OpenAI LLM).
+- `LLM_TYPE` – `"openai"` or `"ollama"`.
+- **Qdrant Integration**  
+  - `QDRANT_URL` – URL of your Qdrant instance (default: `http://localhost:6333`).  
+  - `QDRANT_API_KEY` – API key for Qdrant if required.
+
 ## Usage
 
 ```bash
