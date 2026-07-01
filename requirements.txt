@@ -6,3 +6,4 @@ python-dotenv==1.0.0
 rich==13.7.0
 qdrant-client>=1.0
 pytest==8.3.2
+langchain-core
