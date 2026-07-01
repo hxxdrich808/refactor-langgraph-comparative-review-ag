@@ -1,7 +1,7 @@
 # Refactor LangGraph Comparative Review Agent
 
 ## Requirements
-- [high] Dynamic Criteria Generation: The plan_criteria node must invoke an LLM (OpenAI or Ollama) to produce 3–5 comparison criteria based solely on the three user‑supplied entities. No hardcoded criteria are allowed.
+- [high] Dynamic Criteria Generation: The plan_criteria node must invoke an LLM (OpenAI or Ollama) to produce 3–5 comparison criteria for the three user‑supplied entities. No hardcoded criteria are allowed.
 - [high] Iterative Research Loop: Implement a research_entity node that processes one entity‑criterion pair per iteration, updates the state with findings, and continues until all pairs are covered before moving to build_table.
 - [normal] Real Tavily Integration: Each research step must perform an actual web search via the Tavily SDK or API. The returned snippets should be used verbatim in the findings; fabricated links or hallucinations are disallowed.
 - [normal] Markdown Table Construction: The build_table node must assemble a complete Markdown table with rows for each criterion and columns for each entity, filling all cells with the collected findings.

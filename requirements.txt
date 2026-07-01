@@ -1,8 +1,6 @@
-langgraph==0.1.0
-tavily==0.2.0
-python-dotenv==1.0.0
-rich==13.7.0
-langchain-openai==0.2.0
-langchain-ollama==0.1.0
-qdrant-client>=1.0
-openai==1.30.0
+langgraph
+langchain-openai
+langchain-ollama
+tavily-python
+python-dotenv
+rich
